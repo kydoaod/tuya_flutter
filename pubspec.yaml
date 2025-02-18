@@ -35,7 +35,7 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.example.tuya_flutter
+        package: com.alphaonedesign.tuya_flutter
         pluginClass: TuyaFlutterPlugin
       ios:
         pluginClass: TuyaFlutterPlugin

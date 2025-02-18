@@ -1,4 +1,4 @@
-package com.example.tuya_flutter
+package com.alphaonedesign.tuya_flutter
 
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel

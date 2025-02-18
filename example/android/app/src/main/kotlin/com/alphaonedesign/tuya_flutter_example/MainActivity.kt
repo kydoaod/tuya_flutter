@@ -1,4 +1,4 @@
-package com.example.tuya_flutter_example
+package com.alphaonedesign.tuya_flutter_example
 
 import io.flutter.embedding.android.FlutterActivity
 
