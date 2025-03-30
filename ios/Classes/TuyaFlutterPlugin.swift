@@ -97,13 +97,14 @@ public class TuyaFlutterPlugin: NSObject, FlutterPlugin {
                 result(FlutterError(code: "MISSING_ARGS", message: "Missing token", details: nil))
                 return
             }
-            guard let ssid = args["ssid"] as? String, 
+            guard let ssid = args["ssid"] as? String,
                 let password = args["password"] as? String else {
                 result(FlutterError(code: "MISSING_ARGS", message: "Missing ssid or password", details: nil))
                 return
             }
             let timeout = args["timeout"] as? Double ?? 100
             TuyaFlutterPlugin.activator = ThingSmartActivator.sharedInstance()
+            TuyaFlutterPlugin.activator?.delegate = self
             TuyaFlutterPlugin.activator?.startConfigWiFi(.EZ, ssid: ssid, password: password, token: token, timeout: timeout)
             result("Activator built successfully")
         case "startActivator":
@@ -140,3 +141,22 @@ extension TuyaFlutterPlugin: FlutterStreamHandler {
         return nil
     }
 }
+
+extension TuyaFlutterPlugin: ThingSmartActivatorDelegate {
+    public func activator(_ activator: ThingSmartActivator, didReceiveDevice deviceModel: ThingSmartDeviceModel?, error: Error?) {
+        if let error = error {
+            self.channel.invokeMethod("activatorCallback", arguments: [
+                "event": "error",
+                "errorCode": error.localizedDescription,
+                "errorMsg": error.localizedDescription
+            ])
+        } else if let deviceModel = deviceModel {
+            self.channel.invokeMethod("activatorCallback", arguments: [
+                "event": "deviceFound",
+                "device": deviceModel.name ?? "Unknown Device",
+                "devId": deviceModel.devId
+            ])
+        }
+    }
+}
+
