@@ -106,60 +106,69 @@ class TuyaFlutter {
     };
     return await _channel.invokeMethod('sendDpCommand', args);
   }
+  
+  static Future<dynamic> resetFactory({
+    required String devId
+  }) async {
+    final Map<String, dynamic> args = {
+      'devId': devId
+    };
+    return await _channel.invokeMethod('resetFactory', args);
+  }
 
 
   // Mesh methods
-  static Future<dynamic> createMesh({
-    required int homeId,
-    required String meshName,
-  }) async {
-    final Map<String, dynamic> args = {
-      'homeId': homeId,
-      'meshName': meshName,
-    };
-    return await _channel.invokeMethod('createMesh', args);
-  }
+  // static Future<dynamic> createMesh({
+  //   required int homeId,
+  //   required String meshName,
+  // }) async {
+  //   final Map<String, dynamic> args = {
+  //     'homeId': homeId,
+  //     'meshName': meshName,
+  //   };
+  //   return await _channel.invokeMethod('createMesh', args);
+  // }
 
-  static Future<String?> removeMesh({required String meshId}) async {
-    final Map<String, dynamic> args = {
-      'meshId': meshId,
-    };
-    return await _channel.invokeMethod<String>('removeMesh', args);
-  }
+  // static Future<String?> removeMesh({required String meshId}) async {
+  //   final Map<String, dynamic> args = {
+  //     'meshId': meshId,
+  //   };
+  //   return await _channel.invokeMethod<String>('removeMesh', args);
+  // }
 
-  static Future<dynamic> getMeshList({required int homeId}) async {
-    final Map<String, dynamic> args = {
-      'homeId': homeId,
-    };
-    return await _channel.invokeMethod('getMeshList', args);
-  }
+  // static Future<dynamic> getMeshList({required int homeId}) async {
+  //   final Map<String, dynamic> args = {
+  //     'homeId': homeId,
+  //   };
+  //   return await _channel.invokeMethod('getMeshList', args);
+  // }
 
-  static Future<String?> initMesh({required String meshId}) async {
-    final Map<String, dynamic> args = {
-      'meshId': meshId,
-    };
-    return await _channel.invokeMethod<String>('initMesh', args);
-  }
+  // static Future<String?> initMesh({required String meshId}) async {
+  //   final Map<String, dynamic> args = {
+  //     'meshId': meshId,
+  //   };
+  //   return await _channel.invokeMethod<String>('initMesh', args);
+  // }
 
-  static Future<String?> destroyMesh() async {
-    return await _channel.invokeMethod<String>('destroyMesh');
-  }
+  // static Future<String?> destroyMesh() async {
+  //   return await _channel.invokeMethod<String>('destroyMesh');
+  // }
 
-  static Future<String?> meshScanDevices({
-    String? meshName,
-    String? meshId,
-    int timeout = 100,
-  }) async {
-    final Map<String, dynamic> args = {
-      if (meshName != null) 'meshName': meshName,
-      'timeout': timeout,
-    };
-    return await _channel.invokeMethod<String>('meshScanDevices', args);
-  }
+  // static Future<String?> meshScanDevices({
+  //   String? meshName,
+  //   String? meshId,
+  //   int timeout = 100,
+  // }) async {
+  //   final Map<String, dynamic> args = {
+  //     if (meshName != null) 'meshName': meshName,
+  //     'timeout': timeout,
+  //   };
+  //   return await _channel.invokeMethod<String>('meshScanDevices', args);
+  // }
 
-  static Future<String?> stopMeshScan() async {
-    return await _channel.invokeMethod<String>('stopMeshScan');
-  }
+  // static Future<String?> stopMeshScan() async {
+  //   return await _channel.invokeMethod<String>('stopMeshScan');
+  // }
 
   // static Future<dynamic> meshPairDevices({
   //   required String ssid,

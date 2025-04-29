@@ -307,12 +307,8 @@ class TuyaFlutterPlugin : FlutterPlugin, MethodCallHandler {
                             "device" to devResp.getName(),
                             "devId" to devResp.devId
                         ))
-                        println("---devResp---")
-                        println(devResp)
                     }
                     override fun onStep(step: String?, data: Any?) {
-                        println("---step---")
-                        println(step)
                         channel.invokeMethod("activatorCallback", mapOf<String, Any?>(
                             "event" to "progress",
                             "step" to step,
@@ -356,9 +352,23 @@ class TuyaFlutterPlugin : FlutterPlugin, MethodCallHandler {
                     }
                 })
             }
+            "resetFactory" -> {
+                val devId = call.argument<String>("devId")
+                if (devId == null) {
+                    result.error("MISSING_ARGS", "Missing devId for resetFactory", null)
+                    return
+                }
+                val iThingDevice = ThingHomeSdk.newDeviceInstance(devId);
+                iThingDevice.resetFactory(object: IResultCallback {
+                    override fun onError(errorCode: String, errorMsg: String) {
+                    }
+                    override fun  onSuccess() {
+                        result.success("Device factory reset successfully executed");
+                    }
+                });
+            }
 
-
-            "createMesh" -> {
+            /*"createMesh" -> {
                 val homeIdInt = call.argument<Int>("homeId")
                 if (homeIdInt == null) {
                     result.error("MISSING_ARGS", "Missing homeId for createMesh", null)
@@ -462,8 +472,6 @@ class TuyaFlutterPlugin : FlutterPlugin, MethodCallHandler {
                     .setThingBlueMeshSearchListener(object: IThingBlueMeshSearchListener {
                         override fun onSearched(deviceBean: SearchDeviceBean) {
                             // Forward each discovered device to Flutter.
-                            println("----DEVICEBEAN----")
-                            println(deviceBean)
                             meshEventSink?.success(mapOf(
                                   "event" to "deviceFound",
                                   "meshAddress" to deviceBean.meshAddress,
@@ -484,7 +492,7 @@ class TuyaFlutterPlugin : FlutterPlugin, MethodCallHandler {
                 mMeshSearch?.stopSearch()
                 result.success("Mesh scan stopped")
             }
-            /*"meshPairDevices" -> {
+            "meshPairDevices" -> {
                 val ssid = call.argument<String>("ssid")
                 val password = call.argument<String>("password")
                 val homeIdInt = call.argument<Int>("homeId")
