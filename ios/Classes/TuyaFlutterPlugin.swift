@@ -124,6 +124,19 @@ public class TuyaFlutterPlugin: NSObject, FlutterPlugin {
             }, failure: { error in
                 result(FlutterError(code: "SEND_DP_ERROR", message: error?.localizedDescription ?? "Unknown error", details: nil))
             })
+        case "resetFactory":
+            guard let args = call.arguments as? [String: Any], let devId = args["devId"] as? String else {
+                result(FlutterError(code: "MISSING_ARGS", message: "Missing devId", details: nil))
+                return
+            }
+            let device = ThingSmartDevice(deviceId: devId)
+            device?.resetFactory({
+                print("reset success")
+            }, failure: { (error) in
+                if let e = error {
+                    print("reset failure: \(e)")
+                }
+            })
         default:
             result(FlutterMethodNotImplemented)
         }
