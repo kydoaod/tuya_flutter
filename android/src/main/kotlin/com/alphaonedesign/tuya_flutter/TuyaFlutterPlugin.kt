@@ -92,7 +92,7 @@ class TuyaFlutterPlugin : FlutterPlugin, MethodCallHandler {
                     return
                 }
                 ThingHomeSdk.init(context as Application, appKey, appSecret)
-                ThingHomeSdk.setDebugMode(true)
+                ThingHomeSdk.setDebugMode(false)
                 result.success("Tuya SDK Initialized")
             }
             "loginWithEmail" -> {
