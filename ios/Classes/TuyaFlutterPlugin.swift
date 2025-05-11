@@ -11,6 +11,15 @@ public class TuyaFlutterPlugin: NSObject, FlutterPlugin {
     private var meshEventSink: FlutterEventSink?
     private static var activator: ThingSmartActivator?
     
+    struct ActivatorParams {
+        var ssid: String
+        var password: String
+        var token: String
+        var timeout: Double
+    }
+    
+    private var activatorParams: ActivatorParams?
+
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "tuya_flutter", binaryMessenger: registrar.messenger())
         let instance = TuyaFlutterPlugin(channel: channel, context: UIApplication.shared, messenger: registrar.messenger())
@@ -54,34 +63,115 @@ public class TuyaFlutterPlugin: NSObject, FlutterPlugin {
                 self.channel.invokeMethod("loginCallback", arguments: ["status": "error", "errorCode": error?.localizedDescription ?? "Unknown error"])
             })
             result("loginWithEmail initiated")
+
         case "createHome":
-          result("Not implemented yet")
+            guard let args = call.arguments as? [String: Any],
+                let name = args["name"] as? String,
+                let lon  = args["lon"]  as? Double,
+                let lat  = args["lat"]  as? Double,
+                let geoName = args["geoName"] as? String,
+                let rooms   = args["rooms"]   as? [String] else {
+                result(FlutterError(code: "MISSING_ARGS",
+                                    message: "Missing parameters for createHome",
+                                    details: nil))
+                return
+            }
+            let homeManager = ThingSmartHomeManager()
+            homeManager.addHome(
+                withName:   name,
+                geoName:    geoName,
+                rooms:      rooms,
+                latitude:   lat,
+                longitude:  lon,
+                success: { homeId in
+                    result(homeId)
+                },
+                failure: { error in
+                    result(FlutterError(code: "CREATE_HOME_ERROR",
+                                        message: error?.localizedDescription ?? "Unknown error",
+                                        details: nil))
+                }
+            )
         case "queryHomeList":
-          result("Not implemented yet")
+            let homeManager = ThingSmartHomeManager()
+            homeManager.getHomeList(
+                success: { homes in
+                    let models = homes ?? []
+                    var output: [[String: Any]] = []
+                    for home in models {
+                        output.append([
+                            "homeId":   home.homeId,
+                            "name":     home.name    ?? "",
+                            "geoName":  home.geoName ?? "",
+                            "lon":      home.longitude,
+                            "lat":      home.latitude
+                        ])
+                    }
+                    result(output)
+                },
+                failure: { error in
+                    result(FlutterError(code: "QUERY_HOME_ERROR",
+                                        message: error?.localizedDescription ?? "Unknown error",
+                                        details: nil))
+                }
+            )
         case "getHomeDetail":
-          result("Not implemented yet")
+            guard let args = call.arguments as? [String: Any],
+                let homeIdInt = args["homeId"] as? Int else {
+                result(FlutterError(code: "MISSING_ARGS",
+                                    message: "Missing homeId",
+                                    details: nil))
+                return
+            }
+
+            ThingSmartHome(homeId: Int64(homeIdInt)).getDataWithSuccess({
+                    bean in
+                    guard let bean = bean else {
+                        result(FlutterError(code: "NO_HOME",
+                                            message: "Home not found",
+                                            details: nil))
+                        return
+                    }
+
+
+                    let map: [String: Any] = [
+                        "homeId":     bean.homeId,
+                        "name":       bean.name    ?? "",
+                        "geoName":    bean.geoName ?? "",
+                        "lon":        bean.longitude,
+                        "lat":        bean.latitude,
+                        "rooms":      []
+                    ]
+                    result(map)
+                },
+                failure: { error in
+                    result(FlutterError(code: "HOME_DETAIL_ERROR",
+                                        message: error?.localizedDescription ?? "Unknown error",
+                                        details: nil))
+                }
+            )
         
         case "getDeviceList":
-          guard let args = call.arguments as? [String: Any],
-                let homeId = args["homeId"] as? Int64 else {
-              result(FlutterError(code: "MISSING_ARGS", message: "Missing homeId", details: nil))
-              return
-          }
-          if let home = ThingSmartHome(homeId: homeId) {
-              if let deviceList = home.deviceList {
-                  let devices = deviceList.map { device in
-                      return [
-                          "devId": device.devId,
-                          "name": device.name ?? ""
-                      ]
-                  }
-                  result(devices)
-              } else {
-                  result([])
-              }
-          } else {
-              result(FlutterError(code: "NO_HOME", message: "Unable to initialize home", details: nil))
-          }
+            guard let args = call.arguments as? [String: Any],
+                  let homeId = args["homeId"] as? Int64 else {
+                result(FlutterError(code: "MISSING_ARGS", message: "Missing homeId", details: nil))
+                return
+            }
+            if let home = ThingSmartHome(homeId: homeId) {
+                if let deviceList = home.deviceList {
+                    let devices = deviceList.map { device in
+                        return [
+                            "devId": device.devId,
+                            "name": device.name ?? ""
+                        ]
+                    }
+                    result(devices)
+                } else {
+                    result([])
+                }
+            } else {
+                result(FlutterError(code: "NO_HOME", message: "Unable to initialize home", details: nil))
+            }
         case "getActivatorToken":
             guard let args = call.arguments as? [String: Any], let homeId = args["homeId"] as? Int else {
                 result(FlutterError(code: "MISSING_ARGS", message: "Missing homeId", details: nil))
@@ -93,25 +183,28 @@ public class TuyaFlutterPlugin: NSObject, FlutterPlugin {
                 result(FlutterError(code: "TOKEN_ERROR", message: error?.localizedDescription ?? "Unknown error", details: nil))
             })
         case "buildActivator":
-            guard let args = call.arguments as? [String: Any], let token = args["token"] as? String else {
-                result(FlutterError(code: "MISSING_ARGS", message: "Missing token", details: nil))
-                return
-            }
-            guard let ssid = args["ssid"] as? String,
-                let password = args["password"] as? String else {
-                result(FlutterError(code: "MISSING_ARGS", message: "Missing ssid or password", details: nil))
+            guard let args = call.arguments as? [String: Any],
+                  let token = args["token"] as? String,
+                  let ssid = args["ssid"] as? String,
+                  let password = args["password"] as? String else {
+                result(FlutterError(code: "MISSING_ARGS", message: "Missing required arguments", details: nil))
                 return
             }
             let timeout = args["timeout"] as? Double ?? 100
             TuyaFlutterPlugin.activator = ThingSmartActivator.sharedInstance()
             TuyaFlutterPlugin.activator?.delegate = self
-            TuyaFlutterPlugin.activator?.startConfigWiFi(.EZ, ssid: ssid, password: password, token: token, timeout: timeout)
+            self.activatorParams = ActivatorParams(ssid: ssid, password: password, token: token, timeout: timeout)
             result("Activator built successfully")
         case "startActivator":
-            // TuyaFlutterPlugin.activator?.start()
+            guard let params = self.activatorParams else {
+                result(FlutterError(code: "NO_BUILDER", message: "No activator built", details: nil))
+                return
+            }
+            TuyaFlutterPlugin.activator?.startConfigWiFi(.EZ, ssid: params.ssid, password: params.password, token: params.token, timeout: params.timeout)
             result("Activator started")
         case "stopActivator":
-            //TuyaFlutterPlugin.activator?.stop()
+            TuyaFlutterPlugin.activator?.delegate = self
+            TuyaFlutterPlugin.activator?.stopConfigWiFi()
             result("Activator stopped")
         case "sendDpCommand":
             guard let args = call.arguments as? [String: Any], let devId = args["devId"] as? String, let dpId = args["dpId"] as? String, let dpValue = args["dpValue"] as? Int else {
@@ -131,7 +224,7 @@ public class TuyaFlutterPlugin: NSObject, FlutterPlugin {
             }
             let device = ThingSmartDevice(deviceId: devId)
             device?.resetFactory({
-                print("reset success")
+                result("Device factory reset successfully executed")
             }, failure: { (error) in
                 if let e = error {
                     print("reset failure: \(e)")
@@ -172,4 +265,3 @@ extension TuyaFlutterPlugin: ThingSmartActivatorDelegate {
         }
     }
 }
-
