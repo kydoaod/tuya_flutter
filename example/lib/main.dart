@@ -1,6 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:tuya_flutter/tuya_flutter.dart';
 
+
+void main() {
+  runApp(
+    const MaterialApp(
+      home: TuyaDemoPage(),
+    ),
+  );
+}
+
+
 class TuyaDemoPage extends StatefulWidget {
   const TuyaDemoPage({Key? key}) : super(key: key);
 
@@ -15,6 +25,16 @@ class _TuyaDemoPageState extends State<TuyaDemoPage> {
   String _status = 'Idle';
   List<Map<String, dynamic>> _foundDevices = [];
 
+  @override
+  void initState() {
+    super.initState();
+    //change this according to your generated key and secret from tuya dev interfaces
+    TuyaFlutter.initTuya(appKey:  '', appSecret: '').then((result) {
+      print("Init Result: $result");
+    }).catchError((error) {
+      print("Init Error: $error");
+    });
+  }
   @override
   void dispose() {
     _emailCtrl.dispose();
